@@ -1,47 +1,123 @@
 const express = require('express');
-const bodyParser = require('body-parser');
-
 const leaderRouter = express.Router();
+
+const bodyParser = require('body-parser');
+const leaders = require('../models/leaders');
 
 leaderRouter.use(bodyParser.json());
 
-leaderRouter.route('/')
-.all( (req,res,next)=>{
-    res.statusCode=200;
-    res.setHeader = ('Content-Type','text/plain');
-    next();
-})
-.get( (req,res,next)=>{
-    res.end('Will send all the leader to you');
-})
-.put( (req,res,next)=>{
-    res.end('PUT operation not allowed');
-})
-.post( (req,res,next)=>{
-    res.end('receive your post ' + req.body.content);
-})
-.delete( (req,res,next)=>{
-    res.end('DELETE operation not allowed');
-})
+leaderRouter
+	.route('/')
+	.get((req, res, next) => {
+		leaders
+			.find({})
+			.then(
+				(leader) => {
+					res.statusCode = 200;
+					res.setHeader('Content-type', 'application/json');
+					res.json(leader);
+				},
+				(err) => {
+					next(err);
+				}
+			)
+			.catch((err) => {
+				next(err);
+			});
+	})
+	.put((req, res, next) => {
+		res.end('PUT operation not allowed');
+	})
+	.post((req, res, next) => {
+		leaders
+			.create(req.body)
+			.then(
+				(leader) => {
+					res.statusCode = 200;
+					res.setHeader('Content-type', 'application/json');
+					res.json(leader);
+				},
+				(err) => {
+					next(err);
+				}
+			)
+			.catch((err) => {
+				next(err);
+			});
+	})
+	.delete((req, res, next) => {
+		leaders
+			.remove({})
+			.then(
+				(resp) => {
+					res.statusCode = 200;
+					res.setHeader('Content-type', 'application/json');
+					res.json(resp);
+				},
+				(err) => {
+					next(err);
+				}
+			)
+			.catch((err) => {
+				next(err);
+			});
+	});
 
-leaderRouter.route('/:leaderid')
-.all( (req,res,next)=>{
-    res.statusCode=200;
-    res.setHeader = ('Content-Type','text/plain');
-    next();
-})
-.get( (req,res,next)=>{
-    res.end('Will send the ' +req.params.leaderid  +' leader to you');
-})
-.put( (req,res,next)=>{
-    res.end('PUT operation not allowed');
-})
-.post( (req,res,next)=>{
-    res.end('receive your post ' + req.body.content);
-})
-.delete( (req,res,next)=>{
-    res.end('DELETE operation not allowed');
-})
-
+leaderRouter
+	.route('/:leaderid')
+	.get((req, res, next) => {
+		leaders
+			.findById(req.params.leaderid)
+			.then(
+				(leader) => {
+					res.statusCode = 200;
+					res.setHeader('Content-type', 'application/json');
+					res.json(leader);
+				},
+				(err) => {
+					next(err);
+				}
+			)
+			.catch((err) => {
+				next(err);
+			});
+	})
+	.put((req, res, next) => {
+		res.end('PUT operation not allowed');
+	})
+	.post((req, res, next) => {
+		leaders
+			.findByIdAndUpdate(req.params.leaderid, { $set: req.body })
+			.then(
+				(leader) => {
+					res.statusCode = 200;
+					res.setHeader('Content-type', 'application/json');
+					res.json(leader);
+				},
+				(err) => {
+					next(err);
+				}
+			)
+			.catch((err) => {
+				next(err);
+			});
+	})
+	.delete((req, res, next) => {
+		leaders
+			.findByIdAndRemove(req.params.leaderid)
+			.then(
+				(resp) => {
+					res.statusCode = 200;
+					res.setHeader('Content-type', 'application/json');
+					res.json(resp);
+				},
+				(err) => {
+					next(err);
+				}
+			)
+			.catch((err) => {
+				next(err);
+			});
+	});
 
 module.exports = leaderRouter;
