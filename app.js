@@ -3,6 +3,8 @@ var express = require('express');
 var path = require('path');
 var cookieParser = require('cookie-parser');
 var logger = require('morgan');
+var session = require('express-session');
+var FileStore = require('session-file-store')(session);
 
 var indexRouter = require('./routes/index');
 var usersRouter = require('./routes/users');
@@ -42,13 +44,24 @@ app.use(
 	})
 );
 // * signed-cookie : 需要添加'String'
-app.use(cookieParser('12345-67890-09876-54321'));
+// app.use(cookieParser('12345-67890-09876-54321'));
+
+// * Session middleware
+app.use(
+	session({
+		name: 'session-id',
+		secret: '12345-67890-09876-54321',
+		saveUninitialized: false,
+		resave: false,
+		store: new FileStore()
+	})
+);
 
 // ! --- start of authentic part ---
 function auth(req, res, next) {
-	console.log(req.signedCookies);
+	console.log(req.session);
 	// * if the user have not been authenticated yet
-	if (!req.signedCookies.uid) {
+	if (!req.session.user) {
 		var authHeader = req.headers.authorization;
 		if (!authHeader) {
 			var err = new Error('You are not authenticated!');
@@ -74,7 +87,8 @@ function auth(req, res, next) {
 			if (username === 'admin' && password === 'password') {
 				// * use the res.cookie here
 				// 设置一个新的cookie
-				res.cookie('uid', 'admin', { signed: true });
+				// res.cookie('user', 'admin', { signed: true });
+				req.session.user = 'admin';
 				next();
 			} else {
 				var err = new Error('You are not authenticated!');
@@ -84,7 +98,7 @@ function auth(req, res, next) {
 			}
 		}
 	} else {
-		if (req.signedCookies.uid == 'admin') {
+		if (req.session.user == 'admin') {
 			next();
 		} else {
 			// *一般不会有这种情况: 含有cookie但是是不合格的cookie，不让访问
