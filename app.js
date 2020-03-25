@@ -5,6 +5,14 @@ var cookieParser = require('cookie-parser');
 var logger = require('morgan');
 var session = require('express-session');
 var FileStore = require('session-file-store')(session);
+// * -- passport --
+var passport = require('passport');
+var authenticate = require('./authenticate');
+// * -- passport --
+
+// * -- start of token practice --
+var config = require('./config');
+// * -- end   of token practice --
 
 var indexRouter = require('./routes/index');
 var usersRouter = require('./routes/users');
@@ -16,7 +24,9 @@ var leaderRouter = require('./routes/leaderRouter');
 const mongoose = require('mongoose');
 const Dishes = require('./models/dishes');
 
-const url = 'mongodb://localhost:27017/conFusion';
+// * -- start of token practice --
+const url = config.mongoUrl;
+// * -- end   of token practice --
 
 const connect = mongoose.connect(url);
 
@@ -43,49 +53,18 @@ app.use(
 		extended: false
 	})
 );
-// * signed-cookie : 需要添加'String'
-// app.use(cookieParser('12345-67890-09876-54321'));
 
-// * Session middleware
-app.use(
-	session({
-		name: 'session-id',
-		secret: '12345-67890-09876-54321',
-		saveUninitialized: false,
-		resave: false,
-		store: new FileStore()
-	})
-);
+// * -- passport --
+
+// * 1. 这里会serialize用户信息，并放在session里
+// * 2. 如果有一个client的request，含有一个注册的cookie,⬇️会直接加载req.user
+app.use(passport.initialize());
+
+// * -- passport --
 
 // * user can only access the index and user logging page without Authentication
 app.use('/', indexRouter);
 app.use('/users', usersRouter);
-
-// ! --- start of authentic part ---
-function auth(req, res, next) {
-	console.log(req.session);
-	// * if the user have not been authenticated yet
-	if (!req.session.user) {
-		var err = new Error('You are not authenticated!');
-		res.setHeader('WWW-Authenticate', 'Basic');
-		err.status = 401;
-		return next(err);
-	} else {
-		if (req.session.user == 'authenticated') {
-			next();
-		} else {
-			// *一般不会有这种情况: 含有cookie但是是不合格的cookie，不让访问
-			var err = new Error('You are not authenticated');
-			err.status = 401;
-			return next(err);
-		}
-	}
-}
-
-// * Authentic checking should before the middleware being accessed
-// * !Authentic check!
-app.use(auth);
-// ! --- end of authentic part ---
 
 // *To server static data from the public folder
 app.use(express.static(path.join(__dirname, 'public')));

@@ -4,6 +4,8 @@ const leaderRouter = express.Router();
 const bodyParser = require('body-parser');
 const leaders = require('../models/leaders');
 
+const authenticate = require('../authenticate');
+
 leaderRouter.use(bodyParser.json());
 
 leaderRouter
@@ -25,10 +27,10 @@ leaderRouter
 				next(err);
 			});
 	})
-	.put((req, res, next) => {
+	.put(authenticate.verifyUser, (req, res, next) => {
 		res.end('PUT operation not allowed');
 	})
-	.post((req, res, next) => {
+	.post(authenticate.verifyUser, (req, res, next) => {
 		leaders
 			.create(req.body)
 			.then(
@@ -45,7 +47,7 @@ leaderRouter
 				next(err);
 			});
 	})
-	.delete((req, res, next) => {
+	.delete(authenticate.verifyUser, (req, res, next) => {
 		leaders
 			.remove({})
 			.then(
@@ -82,10 +84,10 @@ leaderRouter
 				next(err);
 			});
 	})
-	.put((req, res, next) => {
+	.put(authenticate.verifyUser, (req, res, next) => {
 		res.end('PUT operation not allowed');
 	})
-	.post((req, res, next) => {
+	.post(authenticate.verifyUser, (req, res, next) => {
 		leaders
 			.findByIdAndUpdate(req.params.leaderid, { $set: req.body })
 			.then(
@@ -102,7 +104,7 @@ leaderRouter
 				next(err);
 			});
 	})
-	.delete((req, res, next) => {
+	.delete(authenticate.verifyUser, (req, res, next) => {
 		leaders
 			.findByIdAndRemove(req.params.leaderid)
 			.then(

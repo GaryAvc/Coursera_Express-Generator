@@ -3,6 +3,12 @@ const bodyParser = require('body-parser');
 var User = require('../models/user');
 var router = express.Router();
 
+// * -- start of token practice --
+var authenticate = require('../authenticate');
+// * -- end   of token practice --
+
+var passport = require('passport');
+
 router.use(bodyParser.json());
 
 /* GET users listing. */
@@ -10,97 +16,46 @@ router.get('/', function(req, res, next) {
 	res.send('respond with a resource');
 });
 // * 从/signup里post
+// ! 用passport来写不会用到.then
 router.post('/signup', function(req, res, next) {
 	// * 找 username = username
-	User.findOne({ username: req.body.username })
-		.then(function(user) {
-			// * 如果找到了 user != null，报错已存在
-			if (user != null) {
-				var err = new Error('User ' + req.body.username + ' already exists');
-				err.status = 403;
-				next(err);
-			}
-			// * 如果不存在，创建一个新的user
-			else {
-				// * 这里会产生一个promise⬇️
-				return User.create({
-					username: req.body.username,
-					password: req.body.password
+	User.register(
+		new User({ username: req.body.username }),
+		req.body.password,
+		(err, user) => {
+			if (err) {
+				res.statusCode = 500;
+				res.setHeader('Content-Type', 'application/json');
+				res.json({ err: err });
+			} else {
+				// todo 不知道为什么这么写，但是先记录一下
+				passport.authenticate('local')(req, res, () => {
+					res.statusCode = 200;
+					res.setHeader('Content-Type', 'application/json');
+					// * 用success来判断是否成功
+					res.json({ success: true, status: 'Registration Successful' });
 				});
 			}
-		})
-		.then(
-			// * 返回json: 成功注册
-			function(user) {
-				res.statusCode = 200;
-				res.setHeader('Content-Type', 'application/json');
-				res.json({ status: 'Registration Successful', user: user });
-			},
-			// * 若有问题,next(err)
-			function(err) {
-				next(err);
-			}
-		)
-		.catch(function(err) {
-			next(err);
-		});
+		}
+	);
 });
 
-router.post('/login', function(req, res, next) {
-	if (!req.session.user) {
-		var authHeader = req.headers.authorization;
-		if (!authHeader) {
-			var err = new Error('You are not authenticated!');
-			res.setHeader('WWW-Authenticate', 'Basic');
-			err.status = 401;
-			return next(err);
-		} else {
-			// * 1. Buffer - enable to split value
-			// * 2. 'base64' - encoding type
-			// * 3. split(' ') - 把string通过' '(空格)分成几个部分， 放入一个array重
-			// *        因为这个string是用一个space隔开的，所以[0] -> basic, [1] -> username+password
-			// * 4. toString().split(":") - username与password通过一个 ; 隔开， 把得到的密码再split到一个array里
-			// * 5. auth - 一个array， 含有[0]-username,[1] - password
-			// ! Buffer.from - 翻译二进制文字 Buffer.from(xx,'base64'); 'base64'->格式
-			var auth = new Buffer.from(authHeader.split(' ')[1], 'base64')
-				.toString()
-				// !用的是':'而不是分号！
-				.split(':');
-
-			var username = auth[0];
-			var password = auth[1];
-
-			User.findOne({ username: username })
-				.then((user) => {
-					if (user === null) {
-						var err = new Error('User not exist!');
-						err.status = 403;
-						return next(err);
-					} else if (user.password != password) {
-						var err = new Error('User or Password is incorrect!');
-						err.status = 403;
-						return next(err);
-					} else {
-						if (user.username === username && user.password === password) {
-							// * use the res.cookie here
-							// 设置一个新的cookie
-							// res.cookie('user', 'admin', { signed: true });
-							req.session.user = 'authenticated';
-							res.statusCode = 200;
-							res.setHeader('Content-Type', 'text/plain');
-							res.end('You are authenticated!');
-						}
-					}
-				})
-				.catch((err) => {
-					next(err);
-				});
-		}
-	} else {
-		res.statusCode = 200;
-		res.setHeader('Content-Type', 'text/plain');
-		res.end('You are already authenticated!');
-	}
+// ! 用passport
+// * 1. 这里有3个parameter,当'/login'的请求近来的时候，先回运行passport.authenticate('local),如果报错了不会运行接下来的，并自动返回err
+// * 2. passport.authenticate('local') -- 会自动的吧user加到req里 === 可以直接调用req.user(不用req.session.user)
+router.post('/login', passport.authenticate('local'), function(req, res) {
+	// * -- start of token practice --
+	// todo : create the token
+	// exports.getToken = function(user)
+	// user - 一个含有passport的module
+	// 		- 这里只需要一个_id用于定义这个含有passport的module
+	var token = authenticate.getToken({ _id: req.user._id });
+	res.statusCode = 200;
+	res.setHeader('Content-Type', 'application/json');
+	// * 用success来判断是否成功
+	// todo : send back the token
+	res.json({ success: true, token: token, status: 'You are logged in!' });
+	// * -- end   of token practice --
 });
 
 router.get('/logout', (req, res, next) => {
