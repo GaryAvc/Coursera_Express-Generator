@@ -6,8 +6,13 @@ var logger = require('morgan');
 var session = require('express-session');
 var FileStore = require('session-file-store')(session);
 
+// ! --- passport-local ---
+var passport = require('passport');
+var authenticate = require('./authenticate');
+// ! --- passport-local ---
+
 var indexRouter = require('./routes/index');
-var usersRouter = require('./routes/users');
+var usersRouter = require('./routes/userRouter');
 var dishRouter = require('./routes/dishRouter');
 var promoRouter = require('./routes/promoRouter');
 var leaderRouter = require('./routes/leaderRouter');
@@ -57,35 +62,32 @@ app.use(
 	})
 );
 
+// ! --- passport-local ---
+app.use(passport.initialize());
+app.use(passport.session());
+// ! --- passport-local ---
+
 // * user can only access the index and user logging page without Authentication
 app.use('/', indexRouter);
 app.use('/users', usersRouter);
 
-// ! --- start of authentic part ---
+// ! --- passport-local ---
 function auth(req, res, next) {
-	console.log(req.session);
 	// * if the user have not been authenticated yet
-	if (!req.session.user) {
+	if (!req.user) {
 		var err = new Error('You are not authenticated!');
 		res.setHeader('WWW-Authenticate', 'Basic');
 		err.status = 401;
 		return next(err);
 	} else {
-		if (req.session.user == 'authenticated') {
-			next();
-		} else {
-			// *一般不会有这种情况: 含有cookie但是是不合格的cookie，不让访问
-			var err = new Error('You are not authenticated');
-			err.status = 401;
-			return next(err);
-		}
+		next();
 	}
 }
 
 // * Authentic checking should before the middleware being accessed
 // * !Authentic check!
 app.use(auth);
-// ! --- end of authentic part ---
+// ! --- passport-local ---
 
 // *To server static data from the public folder
 app.use(express.static(path.join(__dirname, 'public')));
