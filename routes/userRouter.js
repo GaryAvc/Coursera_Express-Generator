@@ -52,12 +52,14 @@ router.post('/login', passport.authenticate('local'), function(req, res) {
 	// exports.getToken = function(user)
 	// user - 一个含有passport的module
 	// 		- 这里只需要一个_id用于定义这个含有passport的module
+	// ! --- token ---
 	var token = authenticate.getToken({ _id: req.user._id });
 	res.statusCode = 200;
 	res.setHeader('Content-Type', 'application/json');
 	// * 用success来判断是否成功
 	// todo : send back the token
 	res.json({ success: true, token: token, status: 'You are logged in!' });
+	// ! --- token ---
 	// * -- end   of token practice --
 });
 

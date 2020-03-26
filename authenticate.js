@@ -42,11 +42,6 @@ exports.getToken = function(user) {
 	return jwt.sign(user, config.secretKey, { expiresIn: 3600 });
 };
 
-// ! -- part 2 --
-
-// ! -- part 3 --
-// ! passport-jwt
-
 var opts = {};
 // .jwtFromRequest - define how the token will be extract from the request
 opts.jwtFromRequest = ExtraJwt.fromAuthHeaderAsBearerToken();
@@ -76,4 +71,4 @@ exports.verifyUser = passport.authenticate('jwt', { session: false });
 
 // * -- end   of token practice --
 
-// ! -- part 3 --
+// ! -- part 2 --
