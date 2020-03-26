@@ -1,3 +1,4 @@
+// ! 利用mongoose和passportLocalMongoose来创建一个user的schema
 var mongoose = require('mongoose');
 var Schema = mongoose.Schema;
 

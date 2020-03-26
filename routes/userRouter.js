@@ -1,3 +1,5 @@
+// ! userRouter -- 用于来应对来自signup, login的请求
+// !			-- 利用写好的authenticate来为user创立passport,token
 var express = require('express');
 const bodyParser = require('body-parser');
 var User = require('../models/user');
@@ -19,6 +21,7 @@ router.get('/', function(req, res, next) {
 // ! 用passport来写不会用到.then
 router.post('/signup', function(req, res, next) {
 	// * 找 username = username
+	// .register --用于注册新的用户
 	User.register(
 		new User({ username: req.body.username }),
 		req.body.password,

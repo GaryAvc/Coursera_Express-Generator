@@ -1,3 +1,4 @@
+// ! 所有关于给予用户权限/authentication的操作都在这个文件里
 var passport = require('passport');
 var localStrategy = require('passport-local').Strategy;
 var user = require('./models/user');
@@ -11,16 +12,24 @@ var config = require('./config');
 
 // * -- end   of token practice --
 
+// ! -- part 1 --
+// ! passport-localMongoose
+
 // * local -- 是一个函数, 内容是passport.use();
 // * user --  是一个module里面用了passportLocalMongoose的plugin所以会有一个authenticate函数
 // * user.authenticate() -- 用于取出body重的username, password
-exports.local = passport.use(new localStrategy(user.authenticate()));
+passport.use(new localStrategy(user.authenticate()));
 // * ⬇️得到所需要的session info. 里面也是passportLocalMongoose的plugin含有的函数
 // ! 是一个函数！！ 要用xxx()
 passport.serializeUser(user.serializeUser());
 passport.deserializeUser(user.deserializeUser());
 
 // * -- start of token practice --
+
+// ! -- part 1 --
+
+// ! -- part 2 --
+// ! passport-jwt
 
 // create token
 exports.getToken = function(user) {
@@ -33,6 +42,11 @@ exports.getToken = function(user) {
 	return jwt.sign(user, config.secretKey, { expiresIn: 3600 });
 };
 
+// ! -- part 2 --
+
+// ! -- part 3 --
+// ! passport-jwt
+
 var opts = {};
 // .jwtFromRequest - define how the token will be extract from the request
 opts.jwtFromRequest = ExtraJwt.fromAuthHeaderAsBearerToken();
@@ -42,7 +56,6 @@ exports.jwtPassport = passport.use(
 	// 1. done -- callback function provided by passport。
 	//         -- 当你用passport.use的时候都需要有一个done function
 	//         -- 作用: passing back info to passport then for loading things on to the request message
-	//
 	new JwtStrategy(opts, function(jwt_payload, done) {
 		console.log('JWT payload: ', jwt_payload);
 		user.findOne({ _id: jwt_payload._id }, (err, user) => {
@@ -62,3 +75,5 @@ exports.jwtPassport = passport.use(
 exports.verifyUser = passport.authenticate('jwt', { session: false });
 
 // * -- end   of token practice --
+
+// ! -- part 3 --
