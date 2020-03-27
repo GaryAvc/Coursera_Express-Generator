@@ -31,13 +31,25 @@ router.post('/signup', function(req, res, next) {
 				res.setHeader('Content-Type', 'application/json');
 				res.json({ err: err });
 			} else {
-				// todo 不知道为什么这么写，但是先记录一下
-				passport.authenticate('local')(req, res, () => {
-					res.statusCode = 200;
-					res.setHeader('Content-Type', 'application/json');
-					// * 用success来判断是否成功
-					res.json({ success: true, status: 'Registration Successful' });
+				if (req.body.firstname) {
+					user.firstname = req.body.firstname;
+				}
+				if (req.body.lastname) {
+					user.lastname = req.body.lastname;
+				}
+				user.save((err, user) => {
+					if (err) {
+						return err;
+					} else {
+						passport.authenticate('local')(req, res, () => {
+							res.statusCode = 200;
+							res.setHeader('Content-Type', 'application/json');
+							// * 用success来判断是否成功
+							res.json({ success: true, status: 'Registration Successful' });
+						});
+					}
 				});
+				// todo 不知道为什么这么写，但是先记录一下
 			}
 		}
 	);

@@ -21,6 +21,7 @@ dishRouter
 	.get((req, res, next) => {
 		// -- add mongodb part --
 		Dishes.find({})
+			.populate('comments.author')
 			.then(
 				function(dishes) {
 					res.statusCode = 200;
@@ -91,6 +92,7 @@ dishRouter
 		// -- add mongodb part --
 
 		Dishes.findById(req.params.dishid)
+			.populate('comments.author')
 			.then(
 				function(dishes) {
 					res.statusCode = 200;
@@ -171,6 +173,7 @@ dishRouter
 	.get((req, res, next) => {
 		// -- add mongodb part --
 		Dishes.findById(req.params.dishid)
+			.populate('comments.author')
 			.then(
 				function(dish) {
 					if (dish != null) {
@@ -203,10 +206,12 @@ dishRouter
 						// 先把新的req的body push到comments里
 						// save
 						// 如果成功的话 那就return
+						req.body.author = req.user;
 						dish.comments.push(req.body);
 						dish
 							.save()
 							.then(function(dish) {
+								dish.populate('comments.author');
 								res.statusCode = 200;
 								res.setHeader('Content-Type', 'application/json');
 								res.json(dish);
