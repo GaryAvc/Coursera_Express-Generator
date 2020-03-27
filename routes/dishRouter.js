@@ -21,6 +21,9 @@ dishRouter
 	.get((req, res, next) => {
 		// -- add mongodb part --
 		Dishes.find({})
+			// * --- mongoose.population
+			.populate('comments.author')
+			// * --- mongoose.population
 			.then(
 				function(dishes) {
 					res.statusCode = 200;
@@ -91,6 +94,9 @@ dishRouter
 		// -- add mongodb part --
 
 		Dishes.findById(req.params.dishid)
+			// * --- mongoose.population
+			.populate('comments.author')
+			// * --- mongoose.population
 			.then(
 				function(dishes) {
 					res.statusCode = 200;
@@ -171,6 +177,9 @@ dishRouter
 	.get((req, res, next) => {
 		// -- add mongodb part --
 		Dishes.findById(req.params.dishid)
+			// * --- mongoose.population
+			.populate('comments.author')
+			// * --- mongoose.population
 			.then(
 				function(dish) {
 					if (dish != null) {
@@ -200,6 +209,13 @@ dishRouter
 			.then(
 				function(dish) {
 					if (dish != null) {
+						// * --- mongoose.population
+						// todo 把这个req的user_id放入到req.body.author
+						// todo 因为在某个dish下面post comment,包含rating, comment, author
+						// todo ,但是author不应该由客户写入，应该自动由server写入，根据authentication
+						req.body.author = req.user._id;
+						// * --- mongoose.population
+
 						// 先把新的req的body push到comments里
 						// save
 						// 如果成功的话 那就return
@@ -207,9 +223,18 @@ dishRouter
 						dish
 							.save()
 							.then(function(dish) {
-								res.statusCode = 200;
-								res.setHeader('Content-Type', 'application/json');
-								res.json(dish);
+								// * --- mongoose.population
+								// todo 这里populate是为了res.json(dish) 展现返回的post之后的页面
+								// todo	.populate('comments.author')是指comment这个schema里面的author这个schema条目
+								// todo
+								Dishes.findById(dish._id)
+									.populate('comments.author')
+									.then((dish) => {
+										res.statusCode = 200;
+										res.setHeader('Content-Type', 'application/json');
+										res.json(dish);
+									});
+								// * --- mongoose.population
 							})
 							.catch((err) => {
 								next(err);
@@ -275,6 +300,9 @@ dishRouter
 		// -- add mongodb part --
 
 		Dishes.findById(req.params.dishid)
+			// * --- mongoose.population
+			.populate('comments.author')
+			// * --- mongoose.population
 			.then(
 				function(dish) {
 					if (dish != null && dish.comments.id(req.params.commentid) != null) {
@@ -325,9 +353,15 @@ dishRouter
 				dish
 					.save()
 					.then(function(dish) {
-						res.statusCode = 200;
-						res.setHeader('Content-Type', 'application/json');
-						res.json(dish);
+						// * --- mongoose.population
+						Dishes.findById(dish._id)
+							.populate('comments.author')
+							.then((dish) => {
+								res.statusCode = 200;
+								res.setHeader('Content-Type', 'application/json');
+								res.json(dish);
+							});
+						// * --- mongoose.population
 					})
 					.catch((err) => {
 						next(err);
@@ -360,9 +394,15 @@ dishRouter
 						// *当完成push，或者remove之后都需要.save()
 						dish.save().then(
 							function(dish) {
-								res.statusCode = 200;
-								res.setHeader('Content-Type', 'application/json');
-								res.json(dish.comments);
+								// * --- mongoose.population
+								Dishes.findById(dish._id)
+									.populate('comments.author')
+									.then((dish) => {
+										res.statusCode = 200;
+										res.setHeader('Content-Type', 'application/json');
+										res.json(dish);
+									});
+								// * --- mongoose.population
 							},
 							(err) => next(err)
 						);
