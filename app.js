@@ -45,42 +45,12 @@ app.use(
 		extended: false
 	})
 );
-// * signed-cookie : 需要添加'String'
-// app.use(cookieParser('12345-67890-09876-54321'));
-
-// * Session middleware
-app.use(
-	session({
-		name: 'session-id',
-		secret: '12345-67890-09876-54321',
-		saveUninitialized: false,
-		resave: false,
-		store: new FileStore()
-	})
-);
 
 app.use(passport.initialize());
-app.use(passport.session());
 
 // * user can only access the index and user logging page without Authentication
 app.use('/', indexRouter);
 app.use('/users', usersRouter);
-
-// ! --- start of authentic part ---
-function auth(req, res, next) {
-	if (!req.user) {
-		res.statusCode = 500;
-		res.setHeader('Content-Type', 'application/json');
-		res.json({ status: 'Not Authenticated!' });
-	} else {
-		next();
-	}
-}
-
-// * Authentic checking should before the middleware being accessed
-// * !Authentic check!
-app.use(auth);
-// ! --- end of authentic part ---
 
 // *To server static data from the public folder
 app.use(express.static(path.join(__dirname, 'public')));
