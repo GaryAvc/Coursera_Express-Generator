@@ -69,6 +69,39 @@ exports.jwtPassport = passport.use(
 // todo verifyUser -- 用于判断这个user/request是否被authenticated,用jwt方法
 exports.verifyUser = passport.authenticate('jwt', { session: false });
 
+// * Verify Admin user
+exports.verifyAdmin = (isAdmin, next) => {
+	if (!isAdmin) {
+		var err = new Error(
+			'You are not admin user, you can not perform this operation'
+		);
+		err.status = 403;
+		return next(err);
+	}
+};
+// * Verify Admin user
+
+exports.verifyOriginUser = (commentUserId, reqId, next) => {
+	if (!reqId.equals(commentUserId)) {
+		var err = new Error(
+			"You are not the origin user who post this comment, \
+			 you don't have the authentication to modify this comment"
+		);
+		err.status = 403;
+		return next(err);
+	}
+};
+exports.verifyOriginOrAdminUser = (commentUserId, reqId, isAdmin, next) => {
+	if (reqId.equals(commentUserId) || isAdmin) {
+	} else {
+		var err = new Error(
+			"You are not the origin user who post this comment, \
+			 you don't have the authentication to modify this comment"
+		);
+		err.status = 403;
+		return next(err);
+	}
+};
 // * -- end   of token practice --
 
 // ! -- part 2 --

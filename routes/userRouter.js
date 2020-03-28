@@ -13,10 +13,6 @@ var passport = require('passport');
 
 router.use(bodyParser.json());
 
-/* GET users listing. */
-router.get('/', function(req, res, next) {
-	res.send('respond with a resource');
-});
 // * 从/signup里post
 // ! 用passport来写不会用到.then
 router.post('/signup', function(req, res, next) {
@@ -92,6 +88,26 @@ router.get('/logout', (req, res, next) => {
 		err.status = 403;
 		next(err);
 	}
+});
+
+router.get('/', authenticate.verifyUser, (req, res, next) => {
+	authenticate.verifyAdmin(req.user.admin, next);
+	User.find({})
+		.then(
+			(users) => {
+				res.statusCode = 200;
+				// return a json
+				res.setHeader('Content-Type', 'application/json');
+				// take json as string and send it back to client
+				res.json(users);
+			},
+			(err) => {
+				next(err);
+			}
+		)
+		.catch(function(err) {
+			next(err);
+		});
 });
 
 module.exports = router;

@@ -31,6 +31,9 @@ leaderRouter
 		res.end('PUT operation not allowed');
 	})
 	.post(authenticate.verifyUser, (req, res, next) => {
+		// * Verify Admin user
+		authenticate.verifyAdmin(req.user.admin, next);
+		// * Verify Admin user
 		leaders
 			.create(req.body)
 			.then(
@@ -48,6 +51,9 @@ leaderRouter
 			});
 	})
 	.delete(authenticate.verifyUser, (req, res, next) => {
+		// * Verify Admin user
+		authenticate.verifyAdmin(req.user.admin, next);
+		// * Verify Admin user
 		leaders
 			.remove({})
 			.then(
@@ -88,6 +94,9 @@ leaderRouter
 		res.end('PUT operation not allowed');
 	})
 	.post(authenticate.verifyUser, (req, res, next) => {
+		// * Verify Admin user
+		authenticate.verifyAdmin(req.user.admin, next);
+		// * Verify Admin user
 		leaders
 			.findByIdAndUpdate(req.params.leaderid, { $set: req.body })
 			.then(
@@ -105,6 +114,9 @@ leaderRouter
 			});
 	})
 	.delete(authenticate.verifyUser, (req, res, next) => {
+		// * Verify Admin user
+		authenticate.verifyAdmin(req.user.admin, next);
+		// * Verify Admin user
 		leaders
 			.findByIdAndRemove(req.params.leaderid)
 			.then(

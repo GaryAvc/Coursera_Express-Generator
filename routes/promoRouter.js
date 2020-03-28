@@ -11,6 +11,9 @@ promoRouter.use(bodyparser.json());
 promoRouter
 	.route('/')
 	.get(function(req, res, next) {
+		// * Verify Admin user
+		authenticate.verifyAdmin(req.user.admin, next);
+		// * Verify Admin user
 		promotions
 			.find({})
 			.then(
@@ -31,6 +34,9 @@ promoRouter
 	})
 
 	.post(authenticate.verifyUser, function(req, res, next) {
+		// * Verify Admin user
+		authenticate.verifyAdmin(req.user.admin, next);
+		// * Verify Admin user
 		promotions
 			.create(req.body)
 			.then(
@@ -53,6 +59,9 @@ promoRouter
 		res.end('PUT operation not supported');
 	})
 	.delete(authenticate.verifyUser, (req, res, next) => {
+		// * Verify Admin user
+		authenticate.verifyAdmin(req.user.admin, next);
+		// * Verify Admin user
 		// * 使用了remove()以后，也会返回一个response,可以选择把这个response也返回回去
 		promotions
 			.remove({})
@@ -96,6 +105,9 @@ promoRouter
 	})
 
 	.post(authenticate.verifyUser, function(req, res, next) {
+		// * Verify Admin user
+		authenticate.verifyAdmin(req.user.admin, next);
+		// * Verify Admin user
 		promotions
 			.findByIdAndUpdate(req.params.promotionsId, {
 				// * 1. 这是一个json的set 所以要用{}
@@ -122,6 +134,9 @@ promoRouter
 		res.end('PUT operation not supported');
 	})
 	.delete(authenticate.verifyUser, (req, res, next) => {
+		// * Verify Admin user
+		authenticate.verifyAdmin(req.user.admin, next);
+		// * Verify Admin user
 		// * 使用了remove()以后，也会返回一个response,可以选择把这个response也返回回去
 		promotions
 			.findByIdAndRemove(req.params.promotionsId)

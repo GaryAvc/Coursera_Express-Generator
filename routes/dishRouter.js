@@ -45,6 +45,7 @@ dishRouter
 
 	// todo 先会运行authenticate.verifyUser,如果成功继续运行，如果失败passport.authenticator会处理
 	.post(authenticate.verifyUser, (req, res, next) => {
+		authenticate.verifyAdmin(req.user.admin, next);
 		// -- add mongodb part --
 		Dishes.create(req.body)
 			.then(
@@ -68,6 +69,9 @@ dishRouter
 	// delete()
 	// dangerous operation - should be only restriced to certain user
 	.delete(authenticate.verifyUser, (req, res, next) => {
+		// * Verify Admin user
+		authenticate.verifyAdmin(req.user.admin, next);
+		// * Verify Admin user
 		// -- add mongodb part --
 		Dishes.remove({})
 			// send some response
@@ -122,7 +126,9 @@ dishRouter
 	})
 	.put(authenticate.verifyUser, (req, res, next) => {
 		// -- add mongodb part --
-
+		// * Verify Admin user
+		authenticate.verifyAdmin(req.user.admin, next);
+		// * Verify Admin user
 		Dishes.findByIdAndUpdate(
 			req.params.dishid,
 			{
@@ -152,7 +158,9 @@ dishRouter
 	// dangerous operation - should be only restriced to certain user
 	.delete(authenticate.verifyUser, (req, res, next) => {
 		// -- add mongodb part --
-
+		// * Verify Admin user
+		authenticate.verifyAdmin(req.user.admin, next);
+		// * Verify Admin user
 		Dishes.findByIdAndRemove(req.params.dishid)
 			.then(
 				function(dishes) {
@@ -260,6 +268,9 @@ dishRouter
 	// delete()
 	// dangerous operation - should be only restriced to certain user
 	.delete(authenticate.verifyUser, (req, res, next) => {
+		// * Verify Admin user
+		authenticate.verifyAdmin(req.user.admin, next);
+		// * Verify Admin user
 		// -- add mongodb part --
 		Dishes.findById(req.params.dishid)
 			// send some response
@@ -342,8 +353,14 @@ dishRouter
 
 		Dishes.findById(req.params.dishid).then((dish) => {
 			if (dish != null && dish.comments.id(req.params.commentid) != null) {
-				// TODO the most simply way to update sub-document
+				authenticate.verifyOriginUser(
+					req.user._id,
+					dish.comments.id(req.params.commentid).author._id,
+					next
+				);
+
 				if (req.body.rating) {
+					// TODO the most simply way to update sub-document
 					dish.comments.id(req.params.commentid).rating = req.body.rating;
 				}
 				if (req.body.comment) {
@@ -384,12 +401,20 @@ dishRouter
 	// dangerous operation - should be only restricted to certain user
 	.delete(authenticate.verifyUser, (req, res, next) => {
 		// -- add mongodb part --
-
 		Dishes.findById(req.params.dishid)
 			// send some response
 			.then(
 				function(dish) {
 					if (dish != null && dish.comments.id(req.params.commentid) != null) {
+						// console.log(dish.comments.id(req.params.commentid).author._id);
+						// console.log(req.user._id);
+						authenticate.verifyOriginOrAdminUser(
+							req.user._id,
+							dish.comments.id(req.params.commentid).author._id,
+							req.user.admin,
+							next
+						);
+
 						dish.comments.id(req.params.commentid).remove();
 						// *当完成push，或者remove之后都需要.save()
 						dish.save().then(
