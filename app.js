@@ -41,6 +41,18 @@ connect.then(
 // -- end of mongodb part --
 
 var app = express();
+// * --- https part ---
+app.all('*', (req, res, next) => {
+	if (req.secure) {
+		return next();
+	} else {
+		res.redirect(
+			307,
+			'https://' + req.hostname + ':' + app.get('secPort') + req.url
+		);
+	}
+});
+// * --- https part ---
 
 // view engine setup
 app.set('views', path.join(__dirname, 'views'));
