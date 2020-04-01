@@ -19,6 +19,7 @@ var usersRouter = require('./routes/userRouter');
 var dishRouter = require('./routes/dishRouter');
 var promoRouter = require('./routes/promoRouter');
 var leaderRouter = require('./routes/leaderRouter');
+var uploadRouter = require('./routes/uploadRouter');
 
 // -- adding the mongoose, mongodb function --
 const mongoose = require('mongoose');
@@ -77,6 +78,7 @@ app.use(passport.initialize());
 // * user can only access the index and user logging page without Authentication
 app.use('/', indexRouter);
 app.use('/users', usersRouter);
+app.use('/image', uploadRouter);
 
 // *To server static data from the public folder
 app.use(express.static(path.join(__dirname, 'public')));
