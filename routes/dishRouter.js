@@ -13,12 +13,21 @@ const authenticate = require('../authenticate');
 // router code
 const dishRouter = express.Router();
 
+// * --- cors part ---
+const cors = require('./cors');
+// * --- cors part ---
+
 dishRouter.use(bodyParser.json());
 
 // mount later
 dishRouter
 	.route('/')
-	.get((req, res, next) => {
+	// * --- cors part ---
+	.options(cors.corsWithOptions, (req, res) => {
+		res.sendStatus(200);
+	})
+	// * --- cors part ---
+	.get(cors.cors, (req, res, next) => {
 		// -- add mongodb part --
 		Dishes.find({})
 			// * --- mongoose.population
@@ -44,30 +53,36 @@ dishRouter
 	})
 
 	// todo 先会运行authenticate.verifyUser,如果成功继续运行，如果失败passport.authenticator会处理
-	.post(authenticate.verifyUser, authenticate.verifyAdmin, (req, res, next) => {
-		// -- add mongodb part --
-		Dishes.create(req.body)
-			.then(
-				function(dish) {
-					console.log('dish created');
-					res.statusCode = 200;
-					res.setHeader('Content-Type', 'application/json');
-					res.json(dish);
-				},
-				(err) => next(err)
-			)
-			.catch((err) => {
-				next(err);
-			});
-		// -- end mongodb part --
-	})
-	.put(authenticate.verifyUser, (req, res, next) => {
+	.post(
+		cors.corsWithOptions,
+		authenticate.verifyUser,
+		authenticate.verifyAdmin,
+		(req, res, next) => {
+			// -- add mongodb part --
+			Dishes.create(req.body)
+				.then(
+					function(dish) {
+						console.log('dish created');
+						res.statusCode = 200;
+						res.setHeader('Content-Type', 'application/json');
+						res.json(dish);
+					},
+					(err) => next(err)
+				)
+				.catch((err) => {
+					next(err);
+				});
+			// -- end mongodb part --
+		}
+	)
+	.put(cors.corsWithOptions, authenticate.verifyUser, (req, res, next) => {
 		res.statusCode = 403;
 		res.end('PUT operation not supported on /dish');
 	})
 	// delete()
 	// dangerous operation - should be only restriced to certain user
 	.delete(
+		cors.corsWithOptions,
 		authenticate.verifyUser,
 		authenticate.verifyAdmin,
 		(req, res, next) => {
@@ -93,10 +108,14 @@ dishRouter
 
 dishRouter
 	.route('/:dishid')
-
+	// * --- cors part ---
+	.options(cors.corsWithOptions, (req, res) => {
+		res.sendStatus(200);
+	})
+	// * --- cors part ---
 	// test for next()
 	// the modified req,res will be pasted on to the app.get
-	.get((req, res, next) => {
+	.get(cors.cors, (req, res, next) => {
 		// -- add mongodb part --
 
 		Dishes.findById(req.params.dishid)
@@ -122,40 +141,46 @@ dishRouter
 	// post()
 	// the req.body will contain the parsered information
 	// json parser into the req.body - it has name, description, etc
-	.post(authenticate.verifyUser, (req, res, next) => {
+	.post(cors.corsWithOptions, authenticate.verifyUser, (req, res, next) => {
 		res.statusCode = 403;
 		res.end('POST operation not supported on /dish');
 	})
-	.put(authenticate.verifyUser, authenticate.verifyAdmin, (req, res, next) => {
-		// -- add mongodb part --
-		Dishes.findByIdAndUpdate(
-			req.params.dishid,
-			{
-				$set: req.body
-			},
-			{
-				new: true
-			}
-		)
-			.then(
-				function(dishes) {
-					res.statusCode = 200;
-					res.setHeader('Content-Type', 'application/json');
-					res.json(dishes);
+	.put(
+		cors.corsWithOptions,
+		authenticate.verifyUser,
+		authenticate.verifyAdmin,
+		(req, res, next) => {
+			// -- add mongodb part --
+			Dishes.findByIdAndUpdate(
+				req.params.dishid,
+				{
+					$set: req.body
 				},
-				function(err) {
-					next(err);
+				{
+					new: true
 				}
 			)
-			.catch(function(err) {
-				next(err);
-			});
+				.then(
+					function(dishes) {
+						res.statusCode = 200;
+						res.setHeader('Content-Type', 'application/json');
+						res.json(dishes);
+					},
+					function(err) {
+						next(err);
+					}
+				)
+				.catch(function(err) {
+					next(err);
+				});
 
-		// -- end mongodb part --
-	})
+			// -- end mongodb part --
+		}
+	)
 	// delete()
 	// dangerous operation - should be only restriced to certain user
 	.delete(
+		cors.corsWithOptions,
 		authenticate.verifyUser,
 		authenticate.verifyAdmin,
 		(req, res, next) => {
@@ -183,7 +208,12 @@ dishRouter
 // mount later
 dishRouter
 	.route('/:dishid/comments')
-	.get((req, res, next) => {
+	// * --- cors part ---
+	.options(cors.corsWithOptions, (req, res) => {
+		res.sendStatus(200);
+	})
+	// * --- cors part ---
+	.get(cors.cors, (req, res, next) => {
 		// -- add mongodb part --
 		Dishes.findById(req.params.dishid)
 			// * --- mongoose.population
@@ -212,7 +242,7 @@ dishRouter
 		// -- end mongodb part --
 	})
 
-	.post(authenticate.verifyUser, (req, res, next) => {
+	.post(cors.corsWithOptions, authenticate.verifyUser, (req, res, next) => {
 		// -- add mongodb part --
 		Dishes.findById(req.params.dishid)
 			.then(
@@ -262,13 +292,14 @@ dishRouter
 			});
 		// -- end mongodb part --
 	})
-	.put(authenticate.verifyUser, (req, res, next) => {
+	.put(cors.corsWithOptions, authenticate.verifyUser, (req, res, next) => {
 		res.statusCode = 403;
 		res.end('PUT operation not supported on /dish');
 	})
 	// delete()
 	// dangerous operation - should be only restriced to certain user
 	.delete(
+		cors.corsWithOptions,
 		authenticate.verifyUser,
 		authenticate.verifyAdmin,
 		(req, res, next) => {
@@ -306,10 +337,14 @@ dishRouter
 
 dishRouter
 	.route('/:dishid/comments/:commentid')
-
+	// * --- cors part ---
+	.options(cors.corsWithOptions, (req, res) => {
+		res.sendStatus(200);
+	})
+	// * --- cors part ---
 	// test for next()
 	// the modified req,res will be pasted on to the app.get
-	.get((req, res, next) => {
+	.get(cors.cors, (req, res, next) => {
 		// -- add mongodb part --
 
 		Dishes.findById(req.params.dishid)
@@ -346,11 +381,11 @@ dishRouter
 	// post()
 	// the req.body will contain the parsered information
 	// json parser into the req.body - it has name, description, etc
-	.post(authenticate.verifyUser, (req, res, next) => {
+	.post(cors.corsWithOptions, authenticate.verifyUser, (req, res, next) => {
 		res.statusCode = 403;
 		res.end('POST operation not supported on /dish');
 	})
-	.put(authenticate.verifyUser, (req, res, next) => {
+	.put(cors.corsWithOptions, authenticate.verifyUser, (req, res, next) => {
 		// -- add mongodb part --
 
 		Dishes.findById(req.params.dishid).then((dish) => {
@@ -401,7 +436,7 @@ dishRouter
 	})
 	// delete()
 	// dangerous operation - should be only restricted to certain user
-	.delete(authenticate.verifyUser, (req, res, next) => {
+	.delete(cors.corsWithOptions, authenticate.verifyUser, (req, res, next) => {
 		// -- add mongodb part --
 		Dishes.findById(req.params.dishid)
 			// send some response

@@ -6,11 +6,16 @@ const promoRouter = express.Router();
 const authenticate = require('../authenticate');
 const promotions = require('../models/promotions');
 
+const cors = require('./cors');
+
 promoRouter.use(bodyparser.json());
 
 promoRouter
 	.route('/')
-	.get(function(req, res, next) {
+	.options(cors.corsWithOptions, (req, res) => {
+		res.sendStatus(200);
+	})
+	.get(cors.cors, function(req, res, next) {
 		promotions
 			.find({})
 			.then(
@@ -30,33 +35,35 @@ promoRouter
 			});
 	})
 
-	.post(authenticate.verifyUser, authenticate.verifyAdmin, function(
-		req,
-		res,
-		next
-	) {
-		promotions
-			.create(req.body)
-			.then(
-				(promotion) => {
-					res.statusCode = 200;
-					res.setHeader('Content-Type', 'application/json');
-					res.json(promotion);
-				},
-				(err) => {
+	.post(
+		cors.corsWithOptions,
+		authenticate.verifyUser,
+		authenticate.verifyAdmin,
+		function(req, res, next) {
+			promotions
+				.create(req.body)
+				.then(
+					(promotion) => {
+						res.statusCode = 200;
+						res.setHeader('Content-Type', 'application/json');
+						res.json(promotion);
+					},
+					(err) => {
+						next(err);
+					}
+				)
+				.catch((err) => {
 					next(err);
-				}
-			)
-			.catch((err) => {
-				next(err);
-			});
-	})
+				});
+		}
+	)
 
-	.put(authenticate.verifyUser, function(req, res, next) {
+	.put(cors.corsWithOptions, authenticate.verifyUser, function(req, res, next) {
 		res.statusCode = 403;
 		res.end('PUT operation not supported');
 	})
 	.delete(
+		cors.corsWithOptions,
 		authenticate.verifyUser,
 		authenticate.verifyAdmin,
 		(req, res, next) => {
@@ -81,8 +88,10 @@ promoRouter
 
 promoRouter
 	.route('/:promotionsId')
-
-	.get(function(req, res, next) {
+	.options(cors.corsWithOptions, (req, res) => {
+		res.sendStatus(200);
+	})
+	.get(cors.cors, function(req, res, next) {
 		// * 需要通过req.params.xxxId 来获取网址中的id
 		promotions
 			.findById(req.params.promotionsId)
@@ -103,37 +112,39 @@ promoRouter
 			});
 	})
 
-	.post(authenticate.verifyUser, authenticate.verifyAdmin, function(
-		req,
-		res,
-		next
-	) {
-		promotions
-			.findByIdAndUpdate(req.params.promotionsId, {
-				// * 1. 这是一个json的set 所以要用{}
-				// * 2. req.body里面是很多部分所以要用 $set
-				$set: req.body
-			})
-			.then(
-				(promotion) => {
-					res.statusCode = 200;
-					res.setHeader('Content-Type', 'application/json');
-					res.json(promotion);
-				},
-				(err) => {
+	.post(
+		cors.corsWithOptions,
+		authenticate.verifyUser,
+		authenticate.verifyAdmin,
+		function(req, res, next) {
+			promotions
+				.findByIdAndUpdate(req.params.promotionsId, {
+					// * 1. 这是一个json的set 所以要用{}
+					// * 2. req.body里面是很多部分所以要用 $set
+					$set: req.body
+				})
+				.then(
+					(promotion) => {
+						res.statusCode = 200;
+						res.setHeader('Content-Type', 'application/json');
+						res.json(promotion);
+					},
+					(err) => {
+						next(err);
+					}
+				)
+				.catch((err) => {
 					next(err);
-				}
-			)
-			.catch((err) => {
-				next(err);
-			});
-	})
+				});
+		}
+	)
 
-	.put(authenticate.verifyUser, function(req, res, next) {
+	.put(cors.corsWithOptions, authenticate.verifyUser, function(req, res, next) {
 		res.statusCode = 403;
 		res.end('PUT operation not supported');
 	})
 	.delete(
+		cors.corsWithOptions,
 		authenticate.verifyUser,
 		authenticate.verifyAdmin,
 		(req, res, next) => {

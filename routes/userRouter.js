@@ -13,9 +13,11 @@ var passport = require('passport');
 
 router.use(bodyParser.json());
 
+var cors = require('./cors');
+
 // * 从/signup里post
 // ! 用passport来写不会用到.then
-router.post('/signup', function(req, res, next) {
+router.post('/signup', cors.corsWithOptions, function(req, res, next) {
 	// * 找 username = username
 	// .register --用于注册新的用户
 	User.register(
@@ -58,24 +60,29 @@ router.post('/signup', function(req, res, next) {
 // ! 用passport
 // * 1. 这里有3个parameter,当'/login'的请求近来的时候，先回运行passport.authenticate('local),如果报错了不会运行接下来的，并自动返回err
 // * 2. passport.authenticate('local') -- 会自动的吧user加到req里 === 可以直接调用req.user(不用req.session.user)
-router.post('/login', passport.authenticate('local'), function(req, res) {
-	// * -- start of token practice --
-	// todo : create the token
-	// exports.getToken = function(user)
-	// user - 一个含有passport的module
-	// 		- 这里只需要一个_id用于定义这个含有passport的module
-	// ! --- token ---
-	var token = authenticate.getToken({ _id: req.user._id });
-	res.statusCode = 200;
-	res.setHeader('Content-Type', 'application/json');
-	// * 用success来判断是否成功
-	// todo : send back the token
-	res.json({ success: true, token: token, status: 'You are logged in!' });
-	// ! --- token ---
-	// * -- end   of token practice --
-});
+router.post(
+	'/login',
+	cors.corsWithOptions,
+	passport.authenticate('local'),
+	function(req, res) {
+		// * -- start of token practice --
+		// todo : create the token
+		// exports.getToken = function(user)
+		// user - 一个含有passport的module
+		// 		- 这里只需要一个_id用于定义这个含有passport的module
+		// ! --- token ---
+		var token = authenticate.getToken({ _id: req.user._id });
+		res.statusCode = 200;
+		res.setHeader('Content-Type', 'application/json');
+		// * 用success来判断是否成功
+		// todo : send back the token
+		res.json({ success: true, token: token, status: 'You are logged in!' });
+		// ! --- token ---
+		// * -- end   of token practice --
+	}
+);
 
-router.get('/logout', (req, res, next) => {
+router.get('/logout', cors.corsWithOptions, (req, res, next) => {
 	if (req.session) {
 		// * all the info,cookie is removed
 		req.session.destroy();
@@ -90,24 +97,29 @@ router.get('/logout', (req, res, next) => {
 	}
 });
 
-router.get('/', authenticate.verifyUser, (req, res, next) => {
-	authenticate.verifyAdmin(req.user.admin, next);
-	User.find({})
-		.then(
-			(users) => {
-				res.statusCode = 200;
-				// return a json
-				res.setHeader('Content-Type', 'application/json');
-				// take json as string and send it back to client
-				res.json(users);
-			},
-			(err) => {
+router.get(
+	'/',
+	cors.corsWithOptions,
+	authenticate.verifyUser,
+	(req, res, next) => {
+		authenticate.verifyAdmin(req.user.admin, next);
+		User.find({})
+			.then(
+				(users) => {
+					res.statusCode = 200;
+					// return a json
+					res.setHeader('Content-Type', 'application/json');
+					// take json as string and send it back to client
+					res.json(users);
+				},
+				(err) => {
+					next(err);
+				}
+			)
+			.catch(function(err) {
 				next(err);
-			}
-		)
-		.catch(function(err) {
-			next(err);
-		});
-});
+			});
+	}
+);
 
 module.exports = router;
