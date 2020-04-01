@@ -30,10 +30,7 @@ leaderRouter
 	.put(authenticate.verifyUser, (req, res, next) => {
 		res.end('PUT operation not allowed');
 	})
-	.post(authenticate.verifyUser, (req, res, next) => {
-		// * Verify Admin user
-		authenticate.verifyAdmin(req.user.admin, next);
-		// * Verify Admin user
+	.post(authenticate.verifyUser, authenticate.verifyAdmin, (req, res, next) => {
 		leaders
 			.create(req.body)
 			.then(
@@ -50,26 +47,27 @@ leaderRouter
 				next(err);
 			});
 	})
-	.delete(authenticate.verifyUser, (req, res, next) => {
-		// * Verify Admin user
-		authenticate.verifyAdmin(req.user.admin, next);
-		// * Verify Admin user
-		leaders
-			.remove({})
-			.then(
-				(resp) => {
-					res.statusCode = 200;
-					res.setHeader('Content-type', 'application/json');
-					res.json(resp);
-				},
-				(err) => {
+	.delete(
+		authenticate.verifyUser,
+		authenticate.verifyAdmin,
+		(req, res, next) => {
+			leaders
+				.remove({})
+				.then(
+					(resp) => {
+						res.statusCode = 200;
+						res.setHeader('Content-type', 'application/json');
+						res.json(resp);
+					},
+					(err) => {
+						next(err);
+					}
+				)
+				.catch((err) => {
 					next(err);
-				}
-			)
-			.catch((err) => {
-				next(err);
-			});
-	});
+				});
+		}
+	);
 
 leaderRouter
 	.route('/:leaderid')
@@ -93,10 +91,7 @@ leaderRouter
 	.put(authenticate.verifyUser, (req, res, next) => {
 		res.end('PUT operation not allowed');
 	})
-	.post(authenticate.verifyUser, (req, res, next) => {
-		// * Verify Admin user
-		authenticate.verifyAdmin(req.user.admin, next);
-		// * Verify Admin user
+	.post(authenticate.verifyUser, authenticate.verifyAdmin, (req, res, next) => {
 		leaders
 			.findByIdAndUpdate(req.params.leaderid, { $set: req.body })
 			.then(
@@ -113,25 +108,26 @@ leaderRouter
 				next(err);
 			});
 	})
-	.delete(authenticate.verifyUser, (req, res, next) => {
-		// * Verify Admin user
-		authenticate.verifyAdmin(req.user.admin, next);
-		// * Verify Admin user
-		leaders
-			.findByIdAndRemove(req.params.leaderid)
-			.then(
-				(resp) => {
-					res.statusCode = 200;
-					res.setHeader('Content-type', 'application/json');
-					res.json(resp);
-				},
-				(err) => {
+	.delete(
+		authenticate.verifyUser,
+		authenticate.verifyAdmin,
+		(req, res, next) => {
+			leaders
+				.findByIdAndRemove(req.params.leaderid)
+				.then(
+					(resp) => {
+						res.statusCode = 200;
+						res.setHeader('Content-type', 'application/json');
+						res.json(resp);
+					},
+					(err) => {
+						next(err);
+					}
+				)
+				.catch((err) => {
 					next(err);
-				}
-			)
-			.catch((err) => {
-				next(err);
-			});
-	});
+				});
+		}
+	);
 
 module.exports = leaderRouter;

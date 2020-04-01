@@ -70,12 +70,11 @@ exports.jwtPassport = passport.use(
 exports.verifyUser = passport.authenticate('jwt', { session: false });
 
 // * Verify Admin user
-exports.verifyAdmin = (isAdmin, next) => {
-	if (!isAdmin) {
-		var err = new Error(
-			'You are not admin user, you can not perform this operation'
-		);
-		err.status = 403;
+exports.verifyAdmin = (req, res, next) => {
+	if (req.user.admin) {
+		next();
+	} else {
+		var err = new Error('You are not admin user 2');
 		return next(err);
 	}
 };

@@ -44,8 +44,7 @@ dishRouter
 	})
 
 	// todo 先会运行authenticate.verifyUser,如果成功继续运行，如果失败passport.authenticator会处理
-	.post(authenticate.verifyUser, (req, res, next) => {
-		authenticate.verifyAdmin(req.user.admin, next);
+	.post(authenticate.verifyUser, authenticate.verifyAdmin, (req, res, next) => {
 		// -- add mongodb part --
 		Dishes.create(req.body)
 			.then(
@@ -68,26 +67,29 @@ dishRouter
 	})
 	// delete()
 	// dangerous operation - should be only restriced to certain user
-	.delete(authenticate.verifyUser, (req, res, next) => {
-		// * Verify Admin user
-		authenticate.verifyAdmin(req.user.admin, next);
-		// * Verify Admin user
-		// -- add mongodb part --
-		Dishes.remove({})
-			// send some response
-			.then(
-				function(resp) {
-					res.statusCode = 200;
-					res.setHeader('Content-Type', 'application/json');
-					res.json(resp);
-				},
-				(err) => next(err)
-			)
-			.catch((err) => {
-				next(err);
-			});
-		// -- end mongodb part --
-	});
+	.delete(
+		authenticate.verifyUser,
+		authenticate.verifyAdmin,
+		(req, res, next) => {
+			// * Verify Admin user
+			// * Verify Admin user
+			// -- add mongodb part --
+			Dishes.remove({})
+				// send some response
+				.then(
+					function(resp) {
+						res.statusCode = 200;
+						res.setHeader('Content-Type', 'application/json');
+						res.json(resp);
+					},
+					(err) => next(err)
+				)
+				.catch((err) => {
+					next(err);
+				});
+			// -- end mongodb part --
+		}
+	);
 
 dishRouter
 	.route('/:dishid')
@@ -124,11 +126,8 @@ dishRouter
 		res.statusCode = 403;
 		res.end('POST operation not supported on /dish');
 	})
-	.put(authenticate.verifyUser, (req, res, next) => {
+	.put(authenticate.verifyUser, authenticate.verifyAdmin, (req, res, next) => {
 		// -- add mongodb part --
-		// * Verify Admin user
-		authenticate.verifyAdmin(req.user.admin, next);
-		// * Verify Admin user
 		Dishes.findByIdAndUpdate(
 			req.params.dishid,
 			{
@@ -156,28 +155,30 @@ dishRouter
 	})
 	// delete()
 	// dangerous operation - should be only restriced to certain user
-	.delete(authenticate.verifyUser, (req, res, next) => {
-		// -- add mongodb part --
-		// * Verify Admin user
-		authenticate.verifyAdmin(req.user.admin, next);
-		// * Verify Admin user
-		Dishes.findByIdAndRemove(req.params.dishid)
-			.then(
-				function(dishes) {
-					res.statusCode = 200;
-					res.setHeader('Content-Type', 'application/json');
-					res.json(dishes);
-				},
-				function(err) {
-					next(err);
-				}
-			)
-			.catch(function(err) {
-				next(err);
-			});
+	.delete(
+		authenticate.verifyUser,
+		authenticate.verifyAdmin,
+		(req, res, next) => {
+			// -- add mongodb part --
 
-		// -- end mongodb part --
-	});
+			Dishes.findByIdAndRemove(req.params.dishid)
+				.then(
+					function(dishes) {
+						res.statusCode = 200;
+						res.setHeader('Content-Type', 'application/json');
+						res.json(dishes);
+					},
+					function(err) {
+						next(err);
+					}
+				)
+				.catch(function(err) {
+					next(err);
+				});
+
+			// -- end mongodb part --
+		}
+	);
 
 // mount later
 dishRouter
@@ -267,40 +268,41 @@ dishRouter
 	})
 	// delete()
 	// dangerous operation - should be only restriced to certain user
-	.delete(authenticate.verifyUser, (req, res, next) => {
-		// * Verify Admin user
-		authenticate.verifyAdmin(req.user.admin, next);
-		// * Verify Admin user
-		// -- add mongodb part --
-		Dishes.findById(req.params.dishid)
-			// send some response
-			.then(
-				function(dish) {
-					if (dish != null) {
-						//    删除sub-documents 只能用一个循环 + .remove();
-						for (var i = dish.comments.length - 1; i >= 0; i--) {
-							// 因为i是从0到length， 但是对应的_id是自动生成的，所以需要 通过i找到id， 再利用id确定某一个特定的，最后,remove()
-							dish.comments.id(dish.comments[i]._id).remove();
+	.delete(
+		authenticate.verifyUser,
+		authenticate.verifyAdmin,
+		(req, res, next) => {
+			// -- add mongodb part --
+			Dishes.findById(req.params.dishid)
+				// send some response
+				.then(
+					function(dish) {
+						if (dish != null) {
+							//    删除sub-documents 只能用一个循环 + .remove();
+							for (var i = dish.comments.length - 1; i >= 0; i--) {
+								// 因为i是从0到length， 但是对应的_id是自动生成的，所以需要 通过i找到id， 再利用id确定某一个特定的，最后,remove()
+								dish.comments.id(dish.comments[i]._id).remove();
+							}
+							// ！！当完成push，或者remove之后都需要.save()
+							dish.save().then(
+								function(dish) {
+									res.statusCode = 200;
+									res.setHeader('Content-Type', 'application/json');
+									res.json(dish.comments);
+								},
+								(err) => next(err)
+							);
+						} else {
 						}
-						// ！！当完成push，或者remove之后都需要.save()
-						dish.save().then(
-							function(dish) {
-								res.statusCode = 200;
-								res.setHeader('Content-Type', 'application/json');
-								res.json(dish.comments);
-							},
-							(err) => next(err)
-						);
-					} else {
-					}
-				},
-				(err) => next(err)
-			)
-			.catch((err) => {
-				next(err);
-			});
-		// -- end mongodb part --
-	});
+					},
+					(err) => next(err)
+				)
+				.catch((err) => {
+					next(err);
+				});
+			// -- end mongodb part --
+		}
+	);
 
 dishRouter
 	.route('/:dishid/comments/:commentid')

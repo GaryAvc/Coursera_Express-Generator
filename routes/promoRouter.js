@@ -11,9 +11,6 @@ promoRouter.use(bodyparser.json());
 promoRouter
 	.route('/')
 	.get(function(req, res, next) {
-		// * Verify Admin user
-		authenticate.verifyAdmin(req.user.admin, next);
-		// * Verify Admin user
 		promotions
 			.find({})
 			.then(
@@ -33,10 +30,11 @@ promoRouter
 			});
 	})
 
-	.post(authenticate.verifyUser, function(req, res, next) {
-		// * Verify Admin user
-		authenticate.verifyAdmin(req.user.admin, next);
-		// * Verify Admin user
+	.post(authenticate.verifyUser, authenticate.verifyAdmin, function(
+		req,
+		res,
+		next
+	) {
 		promotions
 			.create(req.body)
 			.then(
@@ -58,27 +56,28 @@ promoRouter
 		res.statusCode = 403;
 		res.end('PUT operation not supported');
 	})
-	.delete(authenticate.verifyUser, (req, res, next) => {
-		// * Verify Admin user
-		authenticate.verifyAdmin(req.user.admin, next);
-		// * Verify Admin user
-		// * 使用了remove()以后，也会返回一个response,可以选择把这个response也返回回去
-		promotions
-			.remove({})
-			.then(
-				(resp) => {
-					res.statusCode = 200;
-					res.setHeader('Content-Type', 'application/json');
-					res.json(resp);
-				},
-				(err) => {
+	.delete(
+		authenticate.verifyUser,
+		authenticate.verifyAdmin,
+		(req, res, next) => {
+			// * 使用了remove()以后，也会返回一个response,可以选择把这个response也返回回去
+			promotions
+				.remove({})
+				.then(
+					(resp) => {
+						res.statusCode = 200;
+						res.setHeader('Content-Type', 'application/json');
+						res.json(resp);
+					},
+					(err) => {
+						next(err);
+					}
+				)
+				.catch((err) => {
 					next(err);
-				}
-			)
-			.catch((err) => {
-				next(err);
-			});
-	});
+				});
+		}
+	);
 
 promoRouter
 	.route('/:promotionsId')
@@ -104,10 +103,11 @@ promoRouter
 			});
 	})
 
-	.post(authenticate.verifyUser, function(req, res, next) {
-		// * Verify Admin user
-		authenticate.verifyAdmin(req.user.admin, next);
-		// * Verify Admin user
+	.post(authenticate.verifyUser, authenticate.verifyAdmin, function(
+		req,
+		res,
+		next
+	) {
 		promotions
 			.findByIdAndUpdate(req.params.promotionsId, {
 				// * 1. 这是一个json的set 所以要用{}
@@ -133,26 +133,27 @@ promoRouter
 		res.statusCode = 403;
 		res.end('PUT operation not supported');
 	})
-	.delete(authenticate.verifyUser, (req, res, next) => {
-		// * Verify Admin user
-		authenticate.verifyAdmin(req.user.admin, next);
-		// * Verify Admin user
-		// * 使用了remove()以后，也会返回一个response,可以选择把这个response也返回回去
-		promotions
-			.findByIdAndRemove(req.params.promotionsId)
-			.then(
-				(resp) => {
-					res.statusCode = 200;
-					res.setHeader('Content-Type', 'application/json');
-					res.json(resp);
-				},
-				(err) => {
+	.delete(
+		authenticate.verifyUser,
+		authenticate.verifyAdmin,
+		(req, res, next) => {
+			// * 使用了remove()以后，也会返回一个response,可以选择把这个response也返回回去
+			promotions
+				.findByIdAndRemove(req.params.promotionsId)
+				.then(
+					(resp) => {
+						res.statusCode = 200;
+						res.setHeader('Content-Type', 'application/json');
+						res.json(resp);
+					},
+					(err) => {
+						next(err);
+					}
+				)
+				.catch((err) => {
 					next(err);
-				}
-			)
-			.catch((err) => {
-				next(err);
-			});
-	});
+				});
+		}
+	);
 
 module.exports = promoRouter;
