@@ -14,6 +14,7 @@ var User = new Schema({
 		type: String,
 		default: ''
 	},
+	facebookId: String,
 	// * --- mongoose.population
 	admin: {
 		type: Boolean,

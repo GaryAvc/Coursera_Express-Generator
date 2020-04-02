@@ -122,4 +122,37 @@ router.get(
 	}
 );
 
+// * --- facebook oauth ---
+router.get(
+	'/facebook/token',
+	passport.authenticate('facebook-token'),
+	(req, res) => {
+		if (req.user) {
+			var token = authenticate.getToken({ _id: req.user._id });
+			res.statusCode = 200;
+			res.setHeader('Content-Type', 'application/json');
+			res.json({
+				success: true,
+				token: token,
+				status: 'You are successfully logged in!'
+			});
+		}
+	}
+);
+// router.get(
+// 	'/facebook/token',
+// 	passport.authenticate('facebook-token'),
+// 	(req, res) => {
+// 		// if the passport.authenticate('facebook-token') if successful -- then the user will be loaded into the req
+// 		if (req.user) {
+// 			var token = authenticate.getToken({ _id: req.user._id });
+// 			res.statusCode = 200;
+// 			res.setHeader('Content-Type', 'application/json');
+// 			res.json({ success: true, token: token, status: 'You are logged in!' });
+// 		} else {
+// 			res.end('something wrong');
+// 		}
+// 	}
+// );
+// // * --- facebook oauth ---
 module.exports = router;

@@ -1,7 +1,7 @@
 // ! 所有关于给予用户权限/authentication的操作都在这个文件里
 var passport = require('passport');
 var localStrategy = require('passport-local').Strategy;
-var user = require('./models/user');
+var User = require('./models/user');
 
 // * -- start of token practice --
 
@@ -12,17 +12,21 @@ var config = require('./config');
 
 // * -- end   of token practice --
 
+// * --- facebook oauth ---
+var FacebookTokenStrategy = require('passport-facebook-token');
+// * --- facebook oauth ---
+
 // ! -- part 1 --
 // ! passport-localMongoose
 
 // * local -- 是一个函数, 内容是passport.use();
 // * user --  是一个module里面用了passportLocalMongoose的plugin所以会有一个authenticate函数
 // * user.authenticate() -- 用于取出body重的username, password
-passport.use(new localStrategy(user.authenticate()));
+passport.use(new localStrategy(User.authenticate()));
 // * ⬇️得到所需要的session info. 里面也是passportLocalMongoose的plugin含有的函数
 // ! 是一个函数！！ 要用xxx()
-passport.serializeUser(user.serializeUser());
-passport.deserializeUser(user.deserializeUser());
+passport.serializeUser(User.serializeUser());
+passport.deserializeUser(User.deserializeUser());
 
 // * -- start of token practice --
 
@@ -53,7 +57,7 @@ exports.jwtPassport = passport.use(
 	//         -- 作用: passing back info to passport then for loading things on to the request message
 	new JwtStrategy(opts, function(jwt_payload, done) {
 		console.log('JWT payload: ', jwt_payload);
-		user.findOne({ _id: jwt_payload._id }, (err, user) => {
+		User.findOne({ _id: jwt_payload._id }, (err, user) => {
 			if (err) {
 				// done(err,user?,info?) --  就是上面的callback function: done
 				return done(err, false);
@@ -104,3 +108,64 @@ exports.verifyOriginOrAdminUser = (commentUserId, reqId, isAdmin, next) => {
 // * -- end   of token practice --
 
 // ! -- part 2 --
+
+// * --- facebook oauth ---
+exports.facebookPassport = passport.use(
+	new FacebookTokenStrategy(
+		{
+			clientID: config.facebook.clientId,
+			clientSecret: config.facebook.clientSecret
+		},
+		(accessToken, refreshToken, profile, done) => {
+			User.findOne({ facebookId: profile.id }, (err, user) => {
+				if (err) {
+					return done(err, false);
+				}
+				if (!err && user !== null) {
+					return done(null, user);
+				} else {
+					user = new User({ username: profile.displayName });
+					user.facebookId = profile.id;
+					user.firstname = profile.name.givenName;
+					user.lastname = profile.name.familyName;
+					user.save((err, user) => {
+						if (err) return done(err, false);
+						else return done(null, user);
+					});
+				}
+			});
+		}
+	)
+);
+// exports.facebookPassport = passport.use(
+// 	new FacebookTokenStrategy(
+// 		{
+// 			clientID: config.facebook,
+// 			clientSecret: config.secretKey
+// 		},
+// 		(accessToken, refreshToken, profile, done) => {
+// 			User.findOne({ facebookId: profile.id }, (err, user) => {
+// 				if (err) {
+// 					return done(err, false);
+// 				}
+// 				if (!err && user !== null) {
+// 					return done(null, user);
+// 				} else {
+// 					// create new user
+// 					user = new User({ username: profile.displayName });
+// 					user.facebookId = profile.id;
+// 					user.firstname = profile.name.givenName;
+// 					user.lastname = profile.name.familyName;
+// 					user.save((err, user) => {
+// 						if (err) {
+// 							return done(err, false);
+// 						} else {
+// 							return done(null, user);
+// 						}
+// 					});
+// 				}
+// 			});
+// 		}
+// 	)
+// );
+// * --- facebook oauth ---
