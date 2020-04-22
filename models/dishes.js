@@ -5,30 +5,6 @@ const Schema = mongoose.Schema;
 require('mongoose-currency').loadType(mongoose);
 const Currency = mongoose.Types.Currency;
 
-const commentSchema = new Schema(
-	{
-		rating: {
-			type: Number,
-			min: 1,
-			max: 5,
-			required: true
-		},
-		comment: {
-			type: String,
-			required: true
-		},
-		author: {
-			// * --- mongoose.population
-			type: mongoose.Schema.Types.ObjectId,
-			ref: 'User'
-			// * --- mongoose.population
-		}
-	},
-	{
-		timestamps: true
-	}
-);
-
 const dishSchema = new Schema(
 	{
 		name: {
@@ -61,10 +37,7 @@ const dishSchema = new Schema(
 		feature: {
 			type: Boolean,
 			default: false
-		},
-		// -- sub-document --
-		// save all the comments as array
-		comments: [commentSchema]
+		}
 	},
 	{
 		// 自动把所有的timestamps加入到所有的schema类别中

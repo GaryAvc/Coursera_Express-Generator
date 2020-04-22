@@ -83,10 +83,29 @@ favoriteRouter
 	});
 favoriteRouter
 	.route('/:dishId')
-	.get((req, res) => {
-		res.statusCode = 200;
-		res.setHeader('Content-Type', 'application/json');
-		res.end('GET operation not supported');
+	.get(cors.cors, authenticate.verifyUser, (req, res) => {
+		Favorite.findOne({ user: req.user._id })
+			.then(
+				(favorites) => {
+					if (!favorites) {
+						res.statusCode = 200;
+						res.setHeader('Content-Type', 'application/json');
+						return res.json({ exists: false, favorites: favorites });
+					} else {
+						if (favorites.dishes.indexOf(req.params.dishId) < 0) {
+							res.statusCode = 200;
+							res.setHeader('Content-Type', 'application/json');
+							return res.json({ exists: false, favorites: favorites });
+						} else {
+							res.statusCode = 200;
+							res.setHeader('Content-Type', 'application/json');
+							return res.json({ exists: true, favorites: favorites });
+						}
+					}
+				},
+				(err) => next(err)
+			)
+			.catch((err) => next(err));
 	})
 	.post(authenticate.verifyUser, (req, res, next) => {
 		Favorite.findOne({ user: req.user._id }, (err, favorite) => {
@@ -101,6 +120,14 @@ favoriteRouter
 			favorite
 				.save()
 				.then(function(favorite) {
+					Favorite.findById(favorite._id)
+						.populate('user')
+						.populate('dishes')
+						.then((favorites) => {
+							res.statusCode = 200;
+							res.setHeader('Content-Type', 'application/json');
+							res.json(favorite);
+						});
 					Favorite.findById(favorite._id).then((favorite) => {
 						res.statusCode = 200;
 						res.setHeader('Content-Type', 'application/json');
@@ -126,16 +153,25 @@ favoriteRouter
 				return next(new Error("The user don't have any favorite food yet"));
 			} else if (favorite.dishes.indexOf(req.params.dishId) !== -1) {
 				favorite.dishes.splice(favorite.dishes.indexOf(req.params.dishId), 1);
-				favorite.save().then(
-					function(favorite) {
+				favorite.save();
+				Favorite.findById(favorite._id)
+					.populate('user')
+					.populate('dishes')
+					.then((favorites) => {
 						res.statusCode = 200;
 						res.setHeader('Content-Type', 'application/json');
 						res.json(favorite);
-					},
-					(err) => {
-						return next(err);
-					}
-				);
+					})
+					.then(
+						function(favorite) {
+							res.statusCode = 200;
+							res.setHeader('Content-Type', 'application/json');
+							res.json(favorite);
+						},
+						(err) => {
+							return next(err);
+						}
+					);
 			} else {
 				return next(new Error('User do not contain this favorite food'));
 			}

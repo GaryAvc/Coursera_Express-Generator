@@ -15,8 +15,13 @@ router.use(bodyParser.json());
 
 var cors = require('./cors');
 
+router.options('*', cors.corsWithOptions, (req, res) => {
+	res.sendStatus(200);
+});
+
 // * 从/signup里post
 // ! 用passport来写不会用到.then
+
 router.post('/signup', cors.corsWithOptions, function(req, res, next) {
 	// * 找 username = username
 	// .register --用于注册新的用户
@@ -63,22 +68,35 @@ router.post('/signup', cors.corsWithOptions, function(req, res, next) {
 router.post(
 	'/login',
 	cors.corsWithOptions,
-	passport.authenticate('local'),
-	function(req, res) {
-		// * -- start of token practice --
-		// todo : create the token
-		// exports.getToken = function(user)
-		// user - 一个含有passport的module
-		// 		- 这里只需要一个_id用于定义这个含有passport的module
-		// ! --- token ---
-		var token = authenticate.getToken({ _id: req.user._id });
-		res.statusCode = 200;
-		res.setHeader('Content-Type', 'application/json');
-		// * 用success来判断是否成功
-		// todo : send back the token
-		res.json({ success: true, token: token, status: 'You are logged in!' });
-		// ! --- token ---
-		// * -- end   of token practice --
+
+	function(req, res, next) {
+		passport.authenticate('local', (err, user, info) => {
+			if (err) return next(err);
+			if (!user) {
+				res.statusCode = 401;
+				res.setHeader('Content-Type', 'application/json');
+				res.json({
+					success: false,
+					status: 'Login unsuccessful!',
+					err: info
+				});
+			}
+			req.login(user, (err) => {
+				if (err) {
+					res.statusCode = 401;
+					res.setHeader('Content-Type', 'application/json');
+					res.json({
+						success: false,
+						status: 'Login unsuccessful!',
+						err: 'Could not log in user!'
+					});
+				}
+				var token = authenticate.getToken({ _id: req.user._id });
+				res.statusCode = 200;
+				res.setHeader('Content-Type', 'application/json');
+				res.json({ success: true, token: token, status: 'You are logged in!' });
+			});
+		})(req, res, next);
 	}
 );
 
@@ -139,20 +157,21 @@ router.get(
 		}
 	}
 );
-// router.get(
-// 	'/facebook/token',
-// 	passport.authenticate('facebook-token'),
-// 	(req, res) => {
-// 		// if the passport.authenticate('facebook-token') if successful -- then the user will be loaded into the req
-// 		if (req.user) {
-// 			var token = authenticate.getToken({ _id: req.user._id });
-// 			res.statusCode = 200;
-// 			res.setHeader('Content-Type', 'application/json');
-// 			res.json({ success: true, token: token, status: 'You are logged in!' });
-// 		} else {
-// 			res.end('something wrong');
-// 		}
-// 	}
-// );
-// // * --- facebook oauth ---
+
+router.get('/checkJWTToken', cors.corsWithOptions, (req, res) => {
+	passport.authenticate('jwt', { session: false }, (err, user, info) => {
+		if (err) return next(err);
+
+		if (!user) {
+			res.statusCode = 401;
+			res.setHeader('Content-Type', 'application/json');
+			return res.json({ status: 'JWT invalid!', success: false, err: info });
+		} else {
+			res.statusCode = 200;
+			res.setHeader('Content-Type', 'application/json');
+			return res.json({ status: 'JWT valid!', success: true, user: user });
+		}
+	})(req, res);
+});
+
 module.exports = router;

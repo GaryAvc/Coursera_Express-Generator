@@ -29,7 +29,7 @@ dishRouter
 	// * --- cors part ---
 	.get(cors.cors, (req, res, next) => {
 		// -- add mongodb part --
-		Dishes.find({})
+		Dishes.find(req.query)
 			// * --- mongoose.population
 			.populate('comments.author')
 			// * --- mongoose.population
