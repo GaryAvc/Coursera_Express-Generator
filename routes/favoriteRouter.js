@@ -5,6 +5,7 @@ var authenticate = require('../authenticate');
 var Favorite = require('../models/favorite');
 var User = require('../models/user');
 var Dish = require('../models/dishes');
+var cors = require('./cors');
 
 favoriteRouter
 	.route('/')

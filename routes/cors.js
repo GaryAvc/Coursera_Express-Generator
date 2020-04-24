@@ -4,8 +4,9 @@ const app = express();
 
 const whitelist = [
 	'http://localhost:3000',
+	'http://localhost:3001',
 	'https://localhost:3443',
-	'http://GARY:3001'
+	'https://localhost:3001'
 ];
 
 var corsOptionsDelegate = (req, callback) => {

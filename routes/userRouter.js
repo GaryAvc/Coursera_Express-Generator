@@ -65,40 +65,37 @@ router.post('/signup', cors.corsWithOptions, function(req, res, next) {
 // ! 用passport
 // * 1. 这里有3个parameter,当'/login'的请求近来的时候，先回运行passport.authenticate('local),如果报错了不会运行接下来的，并自动返回err
 // * 2. passport.authenticate('local') -- 会自动的吧user加到req里 === 可以直接调用req.user(不用req.session.user)
-router.post(
-	'/login',
-	cors.corsWithOptions,
-
-	function(req, res, next) {
+router
+	.options(cors.corsWithOptions, (req, res) => {
+		res.sendStatus(200);
+	})
+	.post('/login', cors.corsWithOptions, (req, res, next) => {
 		passport.authenticate('local', (err, user, info) => {
 			if (err) return next(err);
+
 			if (!user) {
 				res.statusCode = 401;
 				res.setHeader('Content-Type', 'application/json');
-				res.json({
-					success: false,
-					status: 'Login unsuccessful!',
-					err: info
-				});
+				res.json({ success: false, status: 'Login Unsuccessful!', err: info });
 			}
-			req.login(user, (err) => {
+			req.logIn(user, (err) => {
 				if (err) {
 					res.statusCode = 401;
 					res.setHeader('Content-Type', 'application/json');
 					res.json({
 						success: false,
-						status: 'Login unsuccessful!',
+						status: 'Login Unsuccessful!',
 						err: 'Could not log in user!'
 					});
 				}
+
 				var token = authenticate.getToken({ _id: req.user._id });
 				res.statusCode = 200;
 				res.setHeader('Content-Type', 'application/json');
-				res.json({ success: true, token: token, status: 'You are logged in!' });
+				res.json({ success: true, status: 'Login Successful!', token: token });
 			});
 		})(req, res, next);
-	}
-);
+	});
 
 router.get('/logout', cors.corsWithOptions, (req, res, next) => {
 	if (req.session) {
@@ -158,7 +155,7 @@ router.get(
 	}
 );
 
-router.get('/checkJWTToken', cors.corsWithOptions, (req, res) => {
+router.get('/checkJWTtoken', cors.corsWithOptions, (req, res) => {
 	passport.authenticate('jwt', { session: false }, (err, user, info) => {
 		if (err) return next(err);
 

@@ -34,9 +34,9 @@ const dishSchema = new Schema(
 			required: true,
 			min: 0
 		},
-		feature: {
+		featured: {
 			type: Boolean,
-			default: false
+			required: true
 		}
 	},
 	{
